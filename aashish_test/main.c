@@ -8,8 +8,8 @@
 #include "nrf_log_ctrl.h"
 
 // @amer Verify these correspond to the correct pins on the dev board
-#define LSM_SPI_MISO_PIN        10
-#define LSM_SPI_MOSI_PIN        8
+#define LSM_SPI_MISO_PIN        8
+#define LSM_SPI_MOSI_PIN        10
 #define LSM_SPI_SCL_PIN         9
 #define LSM_SPI_CS_PIN          11
 
@@ -59,7 +59,9 @@ void lsm_spi_event_handler(const nrf_drv_spi_evt_t *event){
     if (event->type == NRF_DRV_SPI_EVENT_DONE){
         spi_tx_done = true;
         NRF_LOG_INFO(">> Received:\r\n");
-        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, strlen((const char*)spi_rx_buffer));
+//        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, strlen((const char*)spi_rx_buffer));
+        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, 2);
+        
     } else {
         NRF_LOG_INFO("SPI event error\r\n")
     }
@@ -72,6 +74,9 @@ void nrf_spi_init(void){
     spi_config.miso_pin = LSM_SPI_MISO_PIN;
     spi_config.mosi_pin = LSM_SPI_MOSI_PIN;
     spi_config.sck_pin  = LSM_SPI_SCL_PIN;
+    spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
+    spi_config.mode      = NRF_DRV_SPI_MODE_3;
+    spi_config.bit_order = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
     APP_ERROR_CHECK(nrf_drv_spi_init(&spi, &spi_config, lsm_spi_event_handler));
 }
 
@@ -81,25 +86,41 @@ uint8_t test(void){
     APP_ERROR_CHECK(NRF_LOG_INIT(NULL));
     NRF_LOG_INFO("LSM TEST\r\n");
     
-    nrf_spi_init();
+    
 
     // Reset buffer and flag
     memset(&spi_register_buffer, 0, spi_register_buffer_size);
+    memset(&spi_rx_buffer, 0, LSM_SPI_BUFFER_SIZE + 1);
     spi_tx_done = false;
 
     // Check who_am_i
     address = LSM_SPI_READ_MASK | LSM_WHO_AM_I;
-    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, &address, sizeof(address), &spi_register_buffer, spi_register_buffer_size));
+    
+    spi_tx_buffer[0] = address;
+    spi_tx_buffer[1] = 0x00;
+    
+    NRF_LOG_INFO("Address: 0x%X\r\n", address);
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, spi_tx_buffer, 1, spi_rx_buffer, 2));
 
     while (!spi_tx_done){
         __WFE();
     }
+    
+    NRF_LOG_INFO("Test complete\r\n");
 
     NRF_LOG_FLUSH();
     
     return 1;
 }
 
+
 int main(void) {
-    test();
+      APP_ERROR_CHECK(NRF_LOG_INIT(NULL));
+      nrf_spi_init();
+      test();
+//      while (1)
+//      {
+//          test();
+//      }
+//      0x104C
 }
