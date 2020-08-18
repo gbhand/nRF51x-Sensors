@@ -45,6 +45,9 @@
 #define LSM_OUTZ_L_XL           0x2C  // Accel (z) [7:0]
 #define LSM_OUTZ_H_XL           0x2D  // Accel (z) [15:8]
 
+#define GYRO_RANGE              2000  // deg/s
+#define ACCEL_RANGE             16    // g
+
 
 #define SPI_INSTANCE 1
 static const nrf_drv_spi_t spi = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE);
@@ -53,6 +56,7 @@ volatile static bool spi_tx_done = false;
 #define LSM_SPI_BUFFER_SIZE      12   // 12 bytes suffices for reading accelerometer and gyroscope values (2 * 3 + 2 * 3)
 uint8_t spi_tx_buffer[LSM_SPI_BUFFER_SIZE];
 uint8_t spi_rx_buffer[LSM_SPI_BUFFER_SIZE + 1]; // ensure termination
+
 
 
 void lsm_spi_event_handler(const nrf_drv_spi_evt_t *event){
@@ -95,7 +99,7 @@ uint8_t read_register(uint8_t offset) {
     return value;
 }
 
-uint16_t read_register_16bit(uint8_t offset) {
+int16_t read_register_16bit(uint8_t offset) {
     uint8_t address = LSM_SPI_READ_MASK | offset;
     
     memset(&spi_rx_buffer, 0, LSM_SPI_BUFFER_SIZE + 1);
@@ -106,7 +110,7 @@ uint16_t read_register_16bit(uint8_t offset) {
         __WFE();
     }
 
-    uint16_t value = spi_rx_buffer[1] | (spi_rx_buffer[2] << 8);
+    int16_t value = spi_rx_buffer[1] | (spi_rx_buffer[2] << 8);
     return value;
 }
     
@@ -150,6 +154,17 @@ uint8_t lsm_init() {
     simple_write(LSM_CTRL4_C, 0x80);
     NRF_LOG_INFO("LSM_CTRL4_C: 0x%X\r\n", read_register(LSM_CTRL4_C));
     
+    NRF_LOG_INFO("Current gyroscope config: 0x%X\r\n", read_register(LSM_CTRL2_G));
+    uint8_t g_config = 0;
+    // Set scale to 2000 deg/s
+    g_config |= 0x0c;
+    // Set ODR to 416Hz
+    g_config |= 0x60;
+    
+    NRF_LOG_INFO("Setting gyroscope config to 0x%X\r\n", g_config);
+    simple_write(LSM_CTRL2_G, g_config);
+    NRF_LOG_INFO("New gyroscope config: 0x%X\r\n", read_register(LSM_CTRL2_G));
+    
     NRF_LOG_INFO("LSM init complete!\r\n");
     
     NRF_LOG_FLUSH();
@@ -157,15 +172,29 @@ uint8_t lsm_init() {
     return 0;
 }
 
-float calc_accel(uint16_t input)
+float calc_accel(int16_t input)
 {
-      float output = (float)input * 0.061 * (16 >> 1) / 1000;
+      float output = (float)input * 0.061 * (ACCEL_RANGE >> 1) / 1000;
       return output;
+}
+
+float calc_gyro(int16_t input)
+{
+    uint8_t range_divisor = GYRO_RANGE / 125;
+    
+    float output = (float)input * 4.375 * (range_divisor) / 1000;
+    return output;
 }
 
 void print_accel_float(void)
 {
-    NRF_LOG_INFO("X: " NRF_LOG_FLOAT_MARKER "    Y: " NRF_LOG_FLOAT_MARKER "    Z: " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(calc_accel(read_register_16bit(LSM_OUTX_L_XL))), NRF_LOG_FLOAT(calc_accel(read_register_16bit(LSM_OUTY_L_XL))), NRF_LOG_FLOAT(calc_accel(read_register_16bit(LSM_OUTZ_L_XL))));
+    NRF_LOG_INFO("ACCEL | X: " NRF_LOG_FLOAT_MARKER "    Y: " NRF_LOG_FLOAT_MARKER "    Z: " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(calc_accel(read_register_16bit(LSM_OUTX_L_XL))), NRF_LOG_FLOAT(calc_accel(read_register_16bit(LSM_OUTY_L_XL))), NRF_LOG_FLOAT(calc_accel(read_register_16bit(LSM_OUTZ_L_XL))));
+    NRF_LOG_FLUSH();
+}
+
+void print_gyro_float(void)
+{
+    NRF_LOG_INFO("GYRO  | X: " NRF_LOG_FLOAT_MARKER "    Y: " NRF_LOG_FLOAT_MARKER "    Z: " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(calc_gyro(read_register_16bit(LSM_OUTX_L_G))), NRF_LOG_FLOAT(calc_gyro(read_register_16bit(LSM_OUTY_L_G))), NRF_LOG_FLOAT(calc_gyro(read_register_16bit(LSM_OUTZ_L_G))));
     NRF_LOG_FLUSH();
 }
     
@@ -184,6 +213,7 @@ int main(void) {
           if (read_register(LSM_STATUS_REG) & 0x03 == 0x03)
           {
               print_accel_float();
+              print_gyro_float();
           }
           else 
           {
