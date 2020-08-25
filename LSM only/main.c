@@ -8,9 +8,9 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_delay.h"
 
-#define LSM_SPI_MISO_PIN        8     // BLE400: 8       Custom PCB: 10
-#define LSM_SPI_MOSI_PIN        10    // BLE400: 10      Custom PCB: 9
-#define LSM_SPI_SCL_PIN         9     // BLE400: 9       Custom PCB: 8
+#define LSM_SPI_MISO_PIN        10     // BLE400: 8       Custom PCB: 10
+#define LSM_SPI_MOSI_PIN        9    // BLE400: 10      Custom PCB: 9
+#define LSM_SPI_SCL_PIN         8     // BLE400: 9       Custom PCB: 8
 #define LSM_SPI_CS_PIN          11    // BLE400: 11      Custom PCB: 11
 
 #define LSM_SPI_WRITE_MASK      0x00
