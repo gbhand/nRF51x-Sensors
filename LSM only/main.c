@@ -8,10 +8,10 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_delay.h"
 
-#define LSM_SPI_MISO_PIN        10     // BLE400: 8       Custom PCB: 10
-#define LSM_SPI_MOSI_PIN        9    // BLE400: 10      Custom PCB: 9
-#define LSM_SPI_SCL_PIN         8     // BLE400: 9       Custom PCB: 8
-#define LSM_SPI_CS_PIN          11    // BLE400: 11      Custom PCB: 11
+#define LSM_SPI_MISO_PIN        24     // BLE400: 8       Custom PCB: 10        LSM6DS3: SDO    24
+#define LSM_SPI_MOSI_PIN        23    // BLE400: 10      Custom PCB: 9           LSM6DS3: SDA   23
+#define LSM_SPI_SCL_PIN         22     // BLE400: 9       Custom PCB: 8          LSM6DS3: SCL   22
+#define LSM_SPI_CS_PIN          26    // BLE400: 11      Custom PCB: 11         LSM6DS3: CS     26
 
 #define LSM_SPI_WRITE_MASK      0x00
 #define LSM_SPI_READ_MASK       0x80
