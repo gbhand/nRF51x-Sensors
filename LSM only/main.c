@@ -1,3 +1,5 @@
+// main.c
+
 #include "nrf_drv_spi.h"
 #include "app_util_platform.h"
 #include "nrf_gpio.h"
@@ -8,10 +10,10 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_delay.h"
 
-#define LSM_SPI_MISO_PIN        24     // BLE400: 8       Custom PCB: 10        LSM6DS3: SDO    24
-#define LSM_SPI_MOSI_PIN        23    // BLE400: 10      Custom PCB: 9           LSM6DS3: SDA   23
-#define LSM_SPI_SCL_PIN         22     // BLE400: 9       Custom PCB: 8          LSM6DS3: SCL   22
-#define LSM_SPI_CS_PIN          26    // BLE400: 11      Custom PCB: 11         LSM6DS3: CS     26
+#define LSM_SPI_MISO_PIN        10     // BLE400: 8       Custom PCB: 10        LSM6DS3: SDO    24
+#define LSM_SPI_MOSI_PIN        9    // BLE400: 10      Custom PCB: 9           LSM6DS3: SDA   23
+#define LSM_SPI_SCL_PIN         8     // BLE400: 9       Custom PCB: 8          LSM6DS3: SCL   22
+#define LSM_SPI_CS_PIN          11    // BLE400: 11      Custom PCB: 11         LSM6DS3: CS     25
 
 #define LSM_SPI_WRITE_MASK      0x00
 #define LSM_SPI_READ_MASK       0x80
@@ -62,9 +64,9 @@ uint8_t spi_rx_buffer[LSM_SPI_BUFFER_SIZE + 1]; // ensure termination
 void lsm_spi_event_handler(const nrf_drv_spi_evt_t *event){
     if (event->type == NRF_DRV_SPI_EVENT_DONE){
         spi_tx_done = true;
-//        NRF_LOG_INFO(">> Received:\r\n");
-//        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, strlen((const char*)spi_rx_buffer));
-//        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, 2);
+        //        NRF_LOG_INFO(">> Received:\r\n");
+        //        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, strlen((const char*)spi_rx_buffer));
+        //        NRF_LOG_HEXDUMP_INFO(spi_rx_buffer, 2);
         
     } else {
         NRF_LOG_INFO("SPI event error\r\n")
@@ -104,27 +106,27 @@ int16_t read_register_16bit(uint8_t offset) {
     
     memset(&spi_rx_buffer, 0, LSM_SPI_BUFFER_SIZE + 1);
     spi_tx_done = false;
-
+    
     APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, &address, 1, spi_rx_buffer, 3));
     while (!spi_tx_done){
         __WFE();
     }
-
+    
     int16_t value = spi_rx_buffer[1] | (spi_rx_buffer[2] << 8);
     return value;
 }
-    
+
 uint8_t simple_write(uint8_t reg, uint8_t data) {
-  uint8_t packet[2] = {reg, data};
-  
-  reg = reg | 0x00;
-  
-  APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, packet, 2, NULL, 0));
-  while(!spi_tx_done);
-  
-  NRF_LOG_FLUSH();
-  
-  return 0;
+    uint8_t packet[2] = {reg, data};
+    
+    reg = reg | 0x00;
+    
+    APP_ERROR_CHECK(nrf_drv_spi_transfer(&spi, packet, 2, NULL, 0));
+    while(!spi_tx_done);
+    
+    NRF_LOG_FLUSH();
+    
+    return 0;
 }       
 
 uint8_t lsm_init() {
@@ -168,22 +170,19 @@ uint8_t lsm_init() {
     NRF_LOG_INFO("LSM init complete!\r\n");
     
     NRF_LOG_FLUSH();
-
+    
     return 0;
 }
 
 float calc_accel(int16_t input)
 {
-      float output = (float)input * 0.061 * (ACCEL_RANGE >> 1) / 1000;
-      return output;
+    return (float)input * 0.061 * (ACCEL_RANGE >> 1) / 1000;
 }
 
 float calc_gyro(int16_t input)
 {
     uint8_t range_divisor = GYRO_RANGE / 125;
-    
-    float output = (float)input * 4.375 * (range_divisor) / 1000;
-    return output;
+    return (float)input * 4.375 * (range_divisor) / 1000;
 }
 
 void print_accel_float(void)
@@ -197,40 +196,41 @@ void print_gyro_float(void)
     NRF_LOG_INFO("GYRO  | X: " NRF_LOG_FLOAT_MARKER "    Y: " NRF_LOG_FLOAT_MARKER "    Z: " NRF_LOG_FLOAT_MARKER "\r\n", NRF_LOG_FLOAT(calc_gyro(read_register_16bit(LSM_OUTX_L_G))), NRF_LOG_FLOAT(calc_gyro(read_register_16bit(LSM_OUTY_L_G))), NRF_LOG_FLOAT(calc_gyro(read_register_16bit(LSM_OUTZ_L_G))));
     NRF_LOG_FLUSH();
 }
-    
-int main(void) {
-      APP_ERROR_CHECK(NRF_LOG_INIT(NULL));
-      nrf_spi_init();
-      lsm_init();
-      NRF_LOG_INFO("STATUS: 0x%X\r\n", read_register(LSM_STATUS_REG));
-      
-      nrf_delay_ms(500);
-      
-      uint8_t i = 15;
-      while (i--) 
-      {
-          nrf_delay_ms(100);
-          if (read_register(LSM_STATUS_REG) & 0x03 == 0x03)
-          {
-              print_accel_float();
-              print_gyro_float();
-          }
-          else 
-          {
-              NRF_LOG_INFO("Bad status: 0x%X\r\n", read_register(LSM_STATUS_REG));
-          }
-          NRF_LOG_FLUSH();
-      }
-      
-      nrf_delay_ms(100);
-      NRF_LOG_INFO("XL config: 0x%X\r\n", read_register(LSM_CTRL1_XL));
-      simple_write(LSM_CTRL1_XL, 0x00);
-      nrf_delay_ms(100);
-      NRF_LOG_INFO("XL config: 0x%X\r\n", read_register(LSM_CTRL1_XL));
-      
-      NRF_LOG_FLUSH();
-      
 
+int main(void) {
+    APP_ERROR_CHECK(NRF_LOG_INIT(NULL));
+    nrf_spi_init();
+    lsm_init();
+    NRF_LOG_INFO("STATUS: 0x%X\r\n", read_register(LSM_STATUS_REG));
+    
+    nrf_delay_ms(500);
+    
+    uint8_t i = 15;
+    while (i--) 
+    {
+        nrf_delay_ms(900);  // setting this lower causes...odd behavior
+        if (read_register(LSM_STATUS_REG) & 0x03 == 0x03)
+        {
+            print_accel_float();
+            nrf_delay_ms(100);
+            print_gyro_float();
+        }
+        else 
+        {
+            NRF_LOG_INFO("Bad status: 0x%X\r\n", read_register(LSM_STATUS_REG));
+        }
+        //          NRF_LOG_FLUSH();
+    }
+    
+    nrf_delay_ms(100);
+    NRF_LOG_INFO("XL config: 0x%X\r\n", read_register(LSM_CTRL1_XL));
+    simple_write(LSM_CTRL1_XL, 0x00);
+    nrf_delay_ms(100);
+    NRF_LOG_INFO("XL config: 0x%X\r\n", read_register(LSM_CTRL1_XL));
+    
+    NRF_LOG_FLUSH();
+    
+    
 }
 
 
@@ -274,11 +274,11 @@ int main(void) {
 //      i = 200;
 //      NRF_LOG_INFO("X: %d    Y: %d    Z: %d\r\n", read_register(LSM_OUTX_L_XL), read_register(LSM_OUTY_L_XL), read_register(LSM_OUTZ_L_XL));
 //      
-      
-      
-      
 
-      
+
+
+
+
 //      NRF_LOG_INFO("\r\n\r\nPowering down IMU\r\n\r\n");
 ////      write_register(LSM_CTRL1_XL, 0x00);
 //      read_register(LSM_CTRL1_XL);
@@ -287,7 +287,7 @@ int main(void) {
 //      NRF_LOG_INFO("END\r\n");
 //      
 //      NRF_LOG_FLUSH();
-      
+
 //      NRF_LOG_INFO("\r\n\r\nPowering up IMU\r\n\r\n");
 ////      startup();
 ////      write_register(LSM_CTRL1_XL, 0x40);
