@@ -1,0 +1,52 @@
+#Generating source browse information for project spi_pca10028
+
+
+#Abbreviations
+cc = C$:\Program$ Files$ (x86)\IAR$ Systems\Embedded$ Workbench$ 8.4\common\bin\SourceIndexer.exe
+ll = C$:\Program$ Files$ (x86)\IAR$ Systems\Embedded$ Workbench$ 8.4\common\bin\PbdLink.exe
+bd = C$:\Program$ Files$ (x86)\IAR$ Systems\Embedded$ Workbench$ 8.4\common\bin\makeBrowseData.exe
+
+
+
+#Rules
+rule index
+  depfile = $out.dep
+  command = $cc -out=$out -f $in
+rule link
+  command = $ll -M $out $in
+rule browsedata
+  command = $bd $in -output  $out
+
+
+
+#Build steps
+build main.pbi : index main.xcl
+build boards.pbi : index boards.xcl
+build bsp.pbi : index bsp.xcl
+build bsp_nfc.pbi : index bsp_nfc.xcl
+build system_nrf51.pbi : index system_nrf51.xcl
+build nrf_drv_common.pbi : index nrf_drv_common.xcl
+build nrf_drv_gpiote.pbi : index nrf_drv_gpiote.xcl
+build nrf_drv_spi.pbi : index nrf_drv_spi.xcl
+build nrf_drv_uart.pbi : index nrf_drv_uart.xcl
+build app_button.pbi : index app_button.xcl
+build app_error.pbi : index app_error.xcl
+build app_error_weak.pbi : index app_error_weak.xcl
+build app_timer.pbi : index app_timer.xcl
+build app_util_platform.pbi : index app_util_platform.xcl
+build nrf_assert.pbi : index nrf_assert.xcl
+build sdk_errors.pbi : index sdk_errors.xcl
+build nrf_log_backend_serial.pbi : index nrf_log_backend_serial.xcl
+build nrf_log_frontend.pbi : index nrf_log_frontend.xcl
+build RTT_Syscalls_IAR.pbi : index RTT_Syscalls_IAR.xcl
+build SEGGER_RTT.pbi : index SEGGER_RTT.xcl
+build SEGGER_RTT_printf.pbi : index SEGGER_RTT_printf.xcl
+build spi_pca10028_part0.pbi : link main.pbi boards.pbi bsp.pbi bsp_nfc.pbi system_nrf51.pbi
+build spi_pca10028_part1.pbi : link nrf_drv_common.pbi nrf_drv_gpiote.pbi nrf_drv_spi.pbi nrf_drv_uart.pbi app_button.pbi
+build spi_pca10028_part2.pbi : link app_error.pbi app_error_weak.pbi app_timer.pbi app_util_platform.pbi nrf_assert.pbi
+build spi_pca10028_part3.pbi : link sdk_errors.pbi nrf_log_backend_serial.pbi nrf_log_frontend.pbi RTT_Syscalls_IAR.pbi SEGGER_RTT.pbi
+build spi_pca10028_part4.pbi : link SEGGER_RTT_printf.pbi
+build spi_pca10028.pbd : link spi_pca10028_part0.pbi spi_pca10028_part1.pbi spi_pca10028_part2.pbi spi_pca10028_part3.pbi spi_pca10028_part4.pbi
+build spi_pca10028.pbw : browsedata spi_pca10028.pbd
+
+

@@ -1,0 +1,12 @@
+sdk_errors.pbi: \
+  C:\Nordic\SDK\nRF5_SDK_12.3.0_d7731ad\components\libraries\util\sdk_errors.c \
+  C:\Nordic\SDK\nRF5_SDK_12.3.0_d7731ad\components\libraries\util/sdk_errors.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.4\arm\inc\c\stdint.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.4\arm\inc\c\ycheck.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.4\arm\inc\c\yvals.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.4\arm\inc\c\DLib_Defaults.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.4\arm\inc\c\DLib_Config_Full.h \
+  C:\Program\ Files\ (x86)\IAR\ Systems\Embedded\ Workbench\ 8.4\arm\inc\c\DLib_Product.h \
+  C:\Nordic\SDK\nRF5_SDK_12.3.0_d7731ad\examples\peripheral\Aashish_test\pca10028\blank\iar\..\..\..\..\..\..\components\drivers_nrf\nrf_soc_nosd\nrf_error.h \
+  C:\Nordic\SDK\nRF5_SDK_12.3.0_d7731ad\examples\peripheral\Aashish_test\pca10028\blank\iar\..\config\sdk_config.h \
+  C:\Nordic\SDK\nRF5_SDK_12.3.0_d7731ad\components\libraries\util/nordic_common.h
